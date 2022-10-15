@@ -26,12 +26,11 @@ jobs:
       
       - name: make zip
         run: |
-          cd /script
+          cd script
           zip codedeploy.zip *
       
       - name: upload to S3
         run: |
-          cd /script
           aws s3 cp codedeploy.zip s3://devopsmason-terraform/test20221014/
           rm -rf codedeploy.zip
           
