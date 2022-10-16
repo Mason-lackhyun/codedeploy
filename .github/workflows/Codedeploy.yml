@@ -9,14 +9,34 @@ on:
       - main
       
 jobs:
-  build:
-    name: "codedeploy"
+  prepare-commit-msg:
+    name: "check the commit-msg"
     runs-on: ubuntu-latest
-    
+    outputs:
+      HEAD_COMMIT_MSG: ${{ steps.commitmsg.outputs.HEAD_COMMIT_MSG }}
     steps: 
       - name: checkout
         uses: actions/checkout@v3
-      
+      - name: commit_msg
+        id: commitmsg
+        if: github.event_name == 'push'
+        run: echo "::set-output name=HEAD_COMMIT_MSG::$(git log --no-merges -1 --oneline)"
+  check-skip:
+    name: Check to Skip
+    needs: prepare-commit-msg
+    runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '[deploy]')
+    steps:
+      - run: |
+          echo "${{ github.event.head_commit.message }}"
+          echo "success without deploy"
+          exit
+  build:
+    name: "codedeploy"
+    needs: check-skip
+    runs-on: ubuntu-latest
+    
+    steps:       
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
