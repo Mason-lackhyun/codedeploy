@@ -15,46 +15,41 @@ jobs:
     outputs:
       HEAD_COMMIT_MSG: ${{ steps.commitmsg.outputs.HEAD_COMMIT_MSG }}
     steps: 
-      - name: checkout
-        uses: actions/checkout@v3
       - name: commit_msg
         id: commitmsg
         if: github.event_name == 'push'
         run: echo "::set-output name=HEAD_COMMIT_MSG::$(git log --no-merges -1 --oneline)"
-  check-skip:
-    name: Check to Skip
+  check-commit:
+    name: Check commit
     needs: prepare-commit-msg
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '[deploy]') }}
     steps:
       - run: |
           echo "${{ github.event.head_commit.message }}"
-          echo "success without deploy"
-          exit
   build:
     name: "codedeploy"
-    needs: check-skip
+    needs: check-commit
     runs-on: ubuntu-latest
-    
+    if: ${{ contains(github.event.head_commit.message, '[deploy]') }}   
     steps:       
+      - name: checkout
+        uses: actions/checkout@v3
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-      
+          aws-region: ${{ secrets.AWS_REGION }}      
       - name: make zip
         run: |
           cd script
-          zip codedeploy.zip *
-      
+          zip codedeploy.zip *      
       - name: upload to S3
         run: |
           cd script
           aws s3 cp codedeploy.zip s3://devopsmason-terraform/test20221014/
-          rm -rf codedeploy.zip
-          
+          rm -rf codedeploy.zip          
       - name: request to Codedeploy
         run: |
           aws deploy create-deployment --application-name code-deploy --deployment-group-name test --s3-location bucket=devopsmason-terraform,key=test20221014/codedeploy.zip,bundleType=zip
