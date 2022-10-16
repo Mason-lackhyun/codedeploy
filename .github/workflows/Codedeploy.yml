@@ -9,6 +9,10 @@ on:
       - main
       
 jobs:
+  ready:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "bulid start"
   build:
     name: "codedeploy"
     runs-on: ubuntu-latest
