@@ -1,6 +1,6 @@
 name: 'codedeploy'
 
-run-name: Deploy to ${{ inputs.deploy_target }}
+run-name: Deploy to EC2
 
 on: 
   workflow_dispatch:
