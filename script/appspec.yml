@@ -1,19 +1,14 @@
 version: 0.0
 os: linux
 files:
-  - source: /app.py
+  - source: app.py
     destination: /home/ec2-user/
-  - source : /cicd.conf
+  - source : cicd.conf
     destination: /etc/nginx/conf.d/
 permissions:
   - object: /home/ec2-user/
     owner: ec2-user
     group: ec2-user
-    mode: 744
-  - object: /etc/nginx/conf.d
-    owner: root
-    group: root
-    mode: 644
 hooks:
   ApplicationStart:
     - location: /restart.sh
