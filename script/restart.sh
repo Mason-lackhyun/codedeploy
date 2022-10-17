@@ -5,48 +5,58 @@ cd ~
 sudo systemctl enable nginx
 sudo systemctl start nginx
 
-#venv
-python3 -m venv venv 
+#2번째 배포 위한 nginx 문법체크
+sudo nginx -t && sudo systemctl reload nginx
 
+if [[ $? != 0 ]];
+then
+ echo "nginx syntax Error"
+ exit
+else
+ echo "nginx syntax check success!"
+fi
+
+#python 확인
+count=$(ps -ef | grep python | wc -l)
+pid=$(sudo netstat -tnlp | grep python | awk {'print $7'} | cut -d "/" -f1)
+
+
+if [[ $count > 1 ]];
+then
+ echo "python is running and kill now"
+ kill $pid
+else
+ echo "python is not running"
+fi
+
+#venv
+python3 -m venv venv
 source venv/bin/activate
 
 #install
 pip install flask
 
+#pip upgrade
+pip install --upgrade pip
+
 #run
 nohup flask --app app run > nohup.out 2>&1 &
 
-#deactivate
-deactivate
-
-cd ~
-
-sleep 10
-
+sleep 5
 #curl test
 
-curl -s 127.0.0.1 | grep -o "Hello, World" >> log.log
-curl -s 127.0.0.1/health_check >> log.log
+curl -s 127.0.0.1/health_check > log.log
 
-cd ~
 sleep 5
 
-#proxy validate
-po=$(cat log.log | grep He)
-he=$(cat log.log | grep O)
+#health_check
+health_check=$(cat log.log | grep OK)
 
-if [[ -n $po ]];
+if [[ -n $health_check ]];
 then
-  echo "proxy is validate"
+  echo "Health_Check is Good"
 else
-  exit
-fi
-
-#health_Check validate
-if [[ -n $he ]];
-then
-  echo "health_check is validate"
-else
+  echo "Fail"
   exit
 fi
 
